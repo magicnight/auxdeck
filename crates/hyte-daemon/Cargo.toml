@@ -1,0 +1,7 @@
+[package]
+name = "hyte-daemon"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hyte-core = { path = "../hyte-core" }

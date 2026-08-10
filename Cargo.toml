@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = ["crates/hyte-core", "crates/hyte-daemon", "crates/hyte-hostage"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+
+# 见 CLAUDE.md §4
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,0 +1,4 @@
+[package]
+name = "hyte-core"
+version.workspace = true
+edition.workspace = true
