@@ -12,6 +12,7 @@ use std::time::Duration;
 
 use tauri::{App, Manager, PhysicalSize, Size, WebviewWindow};
 use windows::Win32::Foundation::{HWND, RECT};
+use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, GetWindowRect, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE,
     SET_WINDOW_POS_FLAGS, SWP_NOACTIVATE, SWP_NOZORDER, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
@@ -71,33 +72,80 @@ fn set_window_rect(hwnd: HWND, rect: TargetRect) {
 fn window_rect(hwnd: HWND) -> Option<TargetRect> {
     let mut r = RECT::default();
     unsafe { GetWindowRect(hwnd, &mut r).ok()? };
-    Some(TargetRect {
+    Some(rect_from(r))
+}
+
+/// DWM 实际渲染的可视边界。tao 无边框窗口保留 WS_CAPTION（借系统动画），
+/// DWM 会给它算上不可见边框（实测本机左/右/下各 7px）：GetWindowRect 含边框、
+/// 可视区更小，两侧露出桌面。
+fn dwm_visible_rect(hwnd: HWND) -> Option<TargetRect> {
+    let mut r = RECT::default();
+    unsafe {
+        DwmGetWindowAttribute(
+            hwnd,
+            DWMWA_EXTENDED_FRAME_BOUNDS,
+            &mut r as *mut RECT as *mut core::ffi::c_void,
+            std::mem::size_of::<RECT>() as u32,
+        )
+        .ok()?
+    };
+    Some(rect_from(r))
+}
+
+fn rect_from(r: RECT) -> TargetRect {
+    TargetRect {
         x: r.left,
         y: r.top,
         width: (r.right - r.left).max(0) as u32,
         height: (r.bottom - r.top).max(0) as u32,
+    }
+}
+
+/// 量出各边不可见边框厚度，返回「可视区恰好覆盖 panel」所需的窗口矩形。
+/// 无边框差异时返回 None。
+fn frame_compensated_rect(hwnd: HWND, panel: TargetRect) -> Option<TargetRect> {
+    let wr = window_rect(hwnd)?;
+    let vis = dwm_visible_rect(hwnd)?;
+    let dl = vis.x - wr.x;
+    let dt = vis.y - wr.y;
+    let dr = (wr.x + wr.width as i32) - (vis.x + vis.width as i32);
+    let db = (wr.y + wr.height as i32) - (vis.y + vis.height as i32);
+    if dl == 0 && dt == 0 && dr == 0 && db == 0 {
+        return None;
+    }
+    Some(TargetRect {
+        x: panel.x - dl,
+        y: panel.y - dt,
+        width: (panel.width as i32 + dl + dr).max(1) as u32,
+        height: (panel.height as i32 + dt + db).max(1) as u32,
     })
 }
 
 /// 生产路径：设样式 → 原子定位 → 显示 → 再钉一次（show 跨屏触发的 DPICHANGED
-/// 可能让 tao 按 suggested rect 重调，二次 SetWindowPos 把它压回）→ 读回验证。
-fn pin_to_panel(window: &WebviewWindow, rect: TargetRect) -> tauri::Result<()> {
+/// 可能让 tao 按 suggested rect 重调）→ 量 DWM 边框差值外扩补偿 → 验证可视区。
+/// 返回补偿后的窗口矩形，供巡检线程作为纠偏目标。
+fn pin_to_panel(window: &WebviewWindow, panel: TargetRect) -> tauri::Result<TargetRect> {
     let hwnd = window.hwnd()?;
     apply_noactivate(hwnd);
-    set_window_rect(hwnd, rect);
+    set_window_rect(hwnd, panel);
     window.show()?;
-    set_window_rect(hwnd, rect);
+    set_window_rect(hwnd, panel);
 
-    match window_rect(hwnd) {
-        Some(actual) if actual == rect => {
-            eprintln!("[hyte-shell] pinned OK: {rect:?}");
-        }
-        Some(actual) => {
-            eprintln!("[hyte-shell] pin MISMATCH: want {rect:?}, got {actual:?}");
-        }
-        None => eprintln!("[hyte-shell] pin done but GetWindowRect failed"),
+    let target = frame_compensated_rect(hwnd, panel).unwrap_or(panel);
+    if target != panel {
+        set_window_rect(hwnd, target);
     }
-    Ok(())
+
+    match dwm_visible_rect(hwnd) {
+        Some(vis) if vis == panel => {
+            eprintln!("[hyte-shell] pinned OK: visible {panel:?} (window rect {target:?})");
+        }
+        Some(vis) => {
+            eprintln!("[hyte-shell] pin MISMATCH: want visible {panel:?}, got {vis:?} (window rect {target:?})");
+        }
+        None => eprintln!("[hyte-shell] pinned, DWM bounds unavailable (window rect {target:?})"),
+    }
+    Ok(target)
 }
 
 /// 开发态兜底：找不到目标屏时落主屏，带边框普通窗口，不设 NOACTIVATE。
@@ -157,8 +205,8 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 
     match target {
         Some(rect) => {
-            pin_to_panel(&window, rect)?;
-            spawn_position_watchdog(window.clone(), rect);
+            let pinned = pin_to_panel(&window, rect)?;
+            spawn_position_watchdog(window.clone(), pinned);
         }
         None => {
             eprintln!("[hyte-shell] no 682x2560 panel found, falling back to primary");

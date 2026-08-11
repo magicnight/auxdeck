@@ -6,7 +6,11 @@ edition.workspace = true
 [dependencies]
 hyte-core = { path = "../../crates/hyte-core" }
 tauri = { version = "2", features = [] }
-windows = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }
+windows = { version = "0.61", features = [
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
