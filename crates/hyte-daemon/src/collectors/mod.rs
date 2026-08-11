@@ -8,6 +8,10 @@ mod lhm_collector;
 mod nvml_collector;
 mod sysinfo_collector;
 
+pub mod app_usage_collector;
+mod app_usage_tracker;
+pub mod weather_collector;
+
 pub use lhm_collector::LhmCollector;
 pub use nvml_collector::NvmlCollector;
 pub use sysinfo_collector::SysinfoCollector;

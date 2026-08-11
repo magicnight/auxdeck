@@ -40,22 +40,22 @@ body {
 }
 
 .shell-root {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  position: relative;
   width: 682px;
-  min-height: 100%;
+  height: 100%;
   margin: 0 auto;
-  padding: 48px 32px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% -10%, var(--bg-2), transparent 60%),
     var(--bg-0);
 }
 
 .status-banner {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 40;
   padding: 14px 20px;
   border-radius: 14px;
   background: var(--warn-bg);
@@ -64,7 +64,94 @@ body {
   font-size: 22px;
   font-weight: 600;
   text-align: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
+
+/* ---- 分页视口（CLAUDE.md §8.1：页间上下切换，transform 动画 + 分页指示点）---- */
+
+.page-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.page-track {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  transition: transform 320ms ease;
+  will-change: transform;
+}
+
+.page {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 48px 32px;
+}
+
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), 1fr);
+  grid-auto-rows: var(--grid-row-height);
+  gap: var(--grid-gap);
+}
+
+/* 翻页手势带（CLAUDE.md §9「手势仲裁」）：只有屏幕右缘 24px 宽条带响应上下滑动切页；
+   条带外（含 widget 内部滚动、内嵌网页、shorts 上滑换条）完全不受影响。
+   touch-action: none 关闭该条带内浏览器原生滚动手势，避免与自定义翻页手势打架。 */
+.gesture-edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 100%;
+  z-index: 25;
+  touch-action: none;
+}
+
+/* 备选翻页交互：底部圆点点按跳页。 */
+.page-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  gap: 6px;
+}
+
+.page-dot-hit {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.page-dot-hit.active .page-dot {
+  background: var(--text-primary);
+  transform: scale(1.2);
+}
+
+/* ---- 卡片通用 ---- */
 
 .card {
   border-radius: 28px;
@@ -72,14 +159,15 @@ body {
   border: 1px solid var(--border);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
   padding: 36px 28px;
+  overflow: hidden;
 }
 
 .clock-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  padding: 64px 28px;
 }
 
 .clock-time {
@@ -96,7 +184,13 @@ body {
   font-weight: 500;
 }
 
+.metrics-card {
+  display: flex;
+  align-items: center;
+}
+
 .metrics-grid {
+  width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
@@ -120,5 +214,128 @@ body {
 
 .metric-label {
   font-size: 20px;
+  color: var(--text-secondary);
+}
+
+/* ---- 天气卡 ---- */
+
+.weather-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.weather-main {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+}
+
+.weather-temp {
+  font-size: 88px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-condition-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weather-condition {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.weather-city {
+  font-size: 22px;
+  color: var(--text-secondary);
+}
+
+.weather-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24px;
+  color: var(--text-secondary);
+}
+
+.weather-card--empty {
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.weather-empty-title {
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.weather-empty-hint {
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+/* ---- 应用使用时长卡 ---- */
+
+.app-usage-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.app-usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.app-usage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.app-usage-name {
+  font-size: 26px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-usage-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.app-usage-time {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-usage-compare {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.app-usage-card--empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.app-usage-empty-title {
+  font-size: 28px;
   color: var(--text-secondary);
 }

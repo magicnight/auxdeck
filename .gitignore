@@ -4,3 +4,4 @@ dist/
 .omc/
 .remember/
 *.log
+shell/src-tauri/gen/

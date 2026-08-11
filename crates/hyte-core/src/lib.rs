@@ -30,10 +30,12 @@ pub struct GridConfig {
 }
 
 impl Default for GridConfig {
+    /// 行高预算：默认布局页 0 共 15 行，15×150 + 14×12(gap) + 2×48(shell 页边距)
+    /// = 2514px ≤ 2560px 面板高，恰好单页放下并给分页指示留余量。
     fn default() -> Self {
         Self {
             columns: 4,
-            row_height_px: 160,
+            row_height_px: 150,
             gap_px: 12,
         }
     }
