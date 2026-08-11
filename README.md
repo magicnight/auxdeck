@@ -17,12 +17,24 @@ shell/                Tauri v2 + React 渲染层（网格布局 + 多页）
 - Node.js（shell / Tauri v2）
 - WebView2 Runtime（Windows 11 自带）
 
-## 运行（开发模式）
+## 运行
+
+**日常直跑（推荐）**——release 构建后一条命令，daemon 自动拉起并守护同目录的 shell：
 
 ```
-cargo run -p hyte-daemon -- --console   # 终端 1：采集 + WS 推送（--console 附加控制台日志）
-cargo run -p hyte-shell                 # 终端 2：识别 682×2560 副屏并钉屏；找不到则落主屏小窗
+cargo build --release
+target\release\hyte-daemon.exe --console
 ```
+
+**前端开发迭代**（vite HMR）：
+
+```
+cargo run -p hyte-daemon -- --console   # 终端 1
+cd shell; npm run tauri dev             # 终端 2
+```
+
+注意：`cargo run -p hyte-shell`（debug 构建）会去连 vite dev server（devUrl），单独跑会显示
+「localhost 拒绝连接」——debug 构建必须经 `npm run tauri dev` 启动；直跑请用 release。
 
 daemon 默认日志写 `%APPDATA%\HyteDeck\logs\`；配置文件在 `%APPDATA%\HyteDeck\config.toml`（首次运行自动生成，修改后热重载、无需重启）。
 
