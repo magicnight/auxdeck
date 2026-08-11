@@ -12,10 +12,14 @@ use std::time::Duration;
 
 use tauri::{App, Manager, PhysicalSize, Size, WebviewWindow};
 use windows::Win32::Foundation::{HWND, RECT};
-use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
+use windows::Win32::Graphics::Dwm::{
+    DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_BORDER_COLOR,
+    DWMWA_EXTENDED_FRAME_BOUNDS, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
+};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetWindowLongPtrW, GetWindowRect, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE,
-    SET_WINDOW_POS_FLAGS, SWP_NOACTIVATE, SWP_NOZORDER, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    GetWindowLongPtrW, GetWindowRect, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, GWL_STYLE,
+    SET_WINDOW_POS_FLAGS, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
+    WS_CAPTION, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_SYSMENU, WS_THICKFRAME,
 };
 
 /// 目标副屏物理像素尺寸（CLAUDE.md §2）。显示方向可能纵向或纵向翻转，宽高互换也算命中。
@@ -50,6 +54,53 @@ fn apply_noactivate(hwnd: HWND) {
         let current = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
         let ex_bits = (WS_EX_NOACTIVATE.0 | WS_EX_TOOLWINDOW.0) as isize;
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, current | ex_bits);
+    }
+}
+
+/// 剥掉 WS_CAPTION / WS_THICKFRAME / WS_SYSMENU：tao 的无边框窗口保留这些
+/// 样式位换取系统动画，代价是 DWM 按标准窗口给它布局不可见边框（实测左/右/下
+/// 各 7px）。外扩补偿会让窗口左缘越进主屏（不同 DPI），跨屏合成产生 1px 舍入缝。
+/// 对钉死副屏、永不最小化/最大化的常驻窗口，纯 popup 形态才是真全屏：
+/// 无边框布局、无需补偿、窗口矩形不越界。样式变更后 SWP_FRAMECHANGED 强制重算。
+fn strip_window_frame(hwnd: HWND) {
+    unsafe {
+        let style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        let cleared = style & !((WS_CAPTION.0 | WS_THICKFRAME.0 | WS_SYSMENU.0) as isize);
+        SetWindowLongPtrW(hwnd, GWL_STYLE, cleared);
+        let _ = SetWindowPos(
+            hwnd,
+            None,
+            0,
+            0,
+            0,
+            0,
+            SET_WINDOW_POS_FLAGS(
+                SWP_NOMOVE.0 | SWP_NOSIZE.0 | SWP_NOZORDER.0 | SWP_NOACTIVATE.0
+                    | SWP_FRAMECHANGED.0,
+            ),
+        );
+    }
+}
+
+/// 关掉 Win11 给窗口的装饰性描边：圆角（四角露桌面）与 1px 边框描边
+/// （四周细缝）。钉满副屏的常驻窗口要的是「真全屏」，这些装饰只会漏出背景。
+fn strip_dwm_adornments(hwnd: HWND) {
+    unsafe {
+        let corner = DWMWCP_DONOTROUND;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            &corner as *const _ as *const core::ffi::c_void,
+            std::mem::size_of_val(&corner) as u32,
+        );
+        // DWMWA_COLOR_NONE：完全不画边框描边。
+        let no_border: u32 = 0xFFFF_FFFE;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_BORDER_COLOR,
+            &no_border as *const _ as *const core::ffi::c_void,
+            std::mem::size_of_val(&no_border) as u32,
+        );
     }
 }
 
@@ -127,6 +178,8 @@ fn frame_compensated_rect(hwnd: HWND, panel: TargetRect) -> Option<TargetRect> {
 fn pin_to_panel(window: &WebviewWindow, panel: TargetRect) -> tauri::Result<TargetRect> {
     let hwnd = window.hwnd()?;
     apply_noactivate(hwnd);
+    strip_window_frame(hwnd);
+    strip_dwm_adornments(hwnd);
     set_window_rect(hwnd, panel);
     window.show()?;
     set_window_rect(hwnd, panel);
