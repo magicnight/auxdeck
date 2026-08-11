@@ -1,0 +1,12 @@
+[package]
+name = "hyte-shell"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hyte-core = { path = "../../crates/hyte-core" }
+tauri = "2"
+windows = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }
+
+[build-dependencies]
+tauri-build = "2"

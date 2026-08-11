@@ -241,12 +241,12 @@ M1 验收标准：
 
 **资源基线（动工前实测填入）：**
 
-| 指标 | Nexus 实测 | HyteDeck 目标 |
+| 指标 | Nexus 实测（2026-08-10） | HyteDeck 目标 |
 |---|---|---|
-| 进程数 | 待测 | 3（+WebView2 子进程） |
-| 总内存 | 待测 | daemon <30MB + shell ≤250MB |
-| 空闲 CPU | 待测 | <1% |
-| GPU 占用 | 待测 | 动画时 <5% |
+| 进程数 | 7（含 HYTE.Nexus.Service） | 3（+WebView2 子进程） |
+| 总内存 | 366.8 MB | daemon <30MB + shell ≤250MB |
+| 空闲 CPU | 1.27%（4s 采样窗口） | <1% |
+| GPU 占用 | 未测 | 动画时 <5% |
 
 ---
 
