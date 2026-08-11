@@ -1,4 +1,4 @@
-// daemon <-> shell 消息契约。形状必须与 crates/hyte-core/src/lib.rs 的
+// daemon <-> shell 消息契约。形状必须与 crates/auxdeck-core/src/lib.rs 的
 // SystemSnapshot / WeatherSnapshot / AppUsageSnapshot / ShellConfig / Push 保持一致，
 // 不得单方面改动（CLAUDE.md §10）。
 
@@ -74,11 +74,11 @@ export interface ConfigPush {
   data: ShellConfig;
 }
 
-/** daemon -> shell 的 WebSocket 推送信封（对应 hyte_core::Push 的 4 个变体）。 */
+/** daemon -> shell 的 WebSocket 推送信封（对应 auxdeck_core::Push 的 4 个变体）。 */
 export type Push = SystemPush | WeatherPush | AppUsagePush | ConfigPush;
 
 /**
- * 与 `hyte_core::ShellConfig::default()` 同形的内置默认布局（CLAUDE.md §12 对齐
+ * 与 `auxdeck_core::ShellConfig::default()` 同形的内置默认布局（CLAUDE.md §12 对齐
  * Nexus 第 1 页观感）。daemon 尚未推送 Config 时用它渲染，避免空屏。
  * 若 Rust 侧默认值变化，需同步更新此常量。
  */

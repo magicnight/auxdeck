@@ -8,8 +8,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use auxdeck_core::Push;
 use chrono::{Local, NaiveDate};
-use hyte_core::Push;
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 use tokio::sync::watch;
@@ -34,7 +34,7 @@ fn usage_dir() -> PathBuf {
     std::env::var_os("APPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
-        .join("HyteDeck")
+        .join("auxdeck")
         .join("usage")
 }
 

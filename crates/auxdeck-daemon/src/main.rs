@@ -1,7 +1,7 @@
-//! hyte-daemon：常驻采集 + WebSocket RPC 服务（CLAUDE.md §3）。M2 范围：
+//! auxdeck-daemon：常驻采集 + WebSocket RPC 服务（CLAUDE.md §3）。M2 范围：
 //! config.toml 加载 + 热重载、天气/应用使用时长 collector、rpc 推送泛化为
 //! 多路 Push（M1 已有 sysinfo/nvml/lhm 三个系统指标 collector、WS 推送、
-//! 单实例保护、hyte-shell 守护进程）。
+//! 单实例保护、auxdeck-shell 守护进程）。
 
 mod collectors;
 mod config;
@@ -13,7 +13,7 @@ mod supervisor;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use hyte_core::{Push, SystemSnapshot};
+use auxdeck_core::{Push, SystemSnapshot};
 use tracing::{error, info};
 
 use collectors::{Collector, LhmCollector, NvmlCollector, PartialMetrics, SysinfoCollector};
@@ -52,14 +52,14 @@ async fn main() {
     let _log_guard = logging::init(console);
 
     info!(
-        "hyte-daemon {} starting — rpc @ {}",
+        "auxdeck-daemon {} starting — rpc @ {}",
         env!("CARGO_PKG_VERSION"),
-        hyte_core::RPC_ADDR
+        auxdeck_core::RPC_ADDR
     );
 
     let _instance_lock = match single_instance::acquire() {
         single_instance::SingleInstance::AlreadyRunning => {
-            info!("another hyte-daemon instance is already running, exiting");
+            info!("another auxdeck-daemon instance is already running, exiting");
             return;
         }
         single_instance::SingleInstance::Acquired(handle) => Some(handle),

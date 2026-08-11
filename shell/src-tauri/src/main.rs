@@ -1,4 +1,4 @@
-//! hyte-shell：Tauri v2 渲染层（CLAUDE.md §3 / §9）。
+//! auxdeck-shell：Tauri v2 渲染层（CLAUDE.md §3 / §9）。
 //! M1：窗口钉在目标副屏、附加 NOACTIVATE 不抢焦点、每 5s 巡检位置漂移并搬回。
 //! 找不到目标屏时退化为开发态：主屏、带边框、不设 NOACTIVATE（CLAUDE.md §9.1）。
 //!
@@ -194,12 +194,14 @@ fn pin_to_panel(window: &WebviewWindow, panel: TargetRect) -> tauri::Result<Targ
 
     match dwm_visible_rect(hwnd) {
         Some(vis) if vis == panel => {
-            eprintln!("[hyte-shell] pinned OK: visible {panel:?} (window rect {target:?})");
+            eprintln!("[auxdeck-shell] pinned OK: visible {panel:?} (window rect {target:?})");
         }
         Some(vis) => {
-            eprintln!("[hyte-shell] pin MISMATCH: want visible {panel:?}, got {vis:?} (window rect {target:?})");
+            eprintln!("[auxdeck-shell] pin MISMATCH: want visible {panel:?}, got {vis:?} (window rect {target:?})");
         }
-        None => eprintln!("[hyte-shell] pinned, DWM bounds unavailable (window rect {target:?})"),
+        None => {
+            eprintln!("[auxdeck-shell] pinned, DWM bounds unavailable (window rect {target:?})")
+        }
     }
     Ok(target)
 }
@@ -227,7 +229,7 @@ fn spawn_position_watchdog(window: WebviewWindow, rect: TargetRect) {
             continue;
         };
         if actual != rect {
-            eprintln!("[hyte-shell] drift: {actual:?} -> repin {rect:?}");
+            eprintln!("[auxdeck-shell] drift: {actual:?} -> repin {rect:?}");
             set_window_rect(hwnd, rect);
         }
     });
@@ -241,7 +243,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let mut target: Option<TargetRect> = None;
     for monitor in app.available_monitors()? {
         eprintln!(
-            "[hyte-shell] monitor {:?}: pos=({}, {}) size={}x{} scale={}",
+            "[auxdeck-shell] monitor {:?}: pos=({}, {}) size={}x{} scale={}",
             monitor.name(),
             monitor.position().x,
             monitor.position().y,
@@ -265,7 +267,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
             spawn_position_watchdog(window.clone(), pinned);
         }
         None => {
-            eprintln!("[hyte-shell] no 682x2560 panel found, falling back to primary");
+            eprintln!("[auxdeck-shell] no 682x2560 panel found, falling back to primary");
             show_fallback(&window)?;
         }
     }
@@ -277,5 +279,5 @@ fn main() {
     tauri::Builder::default()
         .setup(setup)
         .run(tauri::generate_context!())
-        .expect("error while running hyte-shell");
+        .expect("error while running auxdeck-shell");
 }

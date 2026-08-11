@@ -1,4 +1,4 @@
-# CLAUDE.md — HyteDeck
+# CLAUDE.md — auxdeck
 
 给 Claude Code 的项目上下文。开始任何工作前先读完本文件。
 
@@ -6,7 +6,7 @@
 
 ## 1. 项目定位
 
-为 HYTE Y70 Touch Infinite 机箱内置副屏编写一个替代 HYTE Nexus 的常驻应用（工作代号 **HyteDeck**）。
+为 HYTE Y70 Touch Infinite 机箱内置副屏编写一个替代 HYTE Nexus 的常驻应用——**auxdeck**（开源于 github.com/magicnight/auxdeck，MIT OR Apache-2.0；曾用工作代号 HyteDeck）。
 
 目标：小组件面板（时钟 / 闹钟 / 天气 / 日程 / 系统信息 / 应用使用时长 / 背景动画）+ 视频与网页内容托管 + 外部窗口拖放停靠 + 触摸优先交互。核心诉求是**低常驻资源占用**与**可自定义**，Nexus 的问题是 Electron 的内存与空闲 CPU 开销，不是磁盘体积。
 
@@ -14,8 +14,8 @@
 
 | 项 | 目标 |
 |---|---|
-| hyte-daemon | 空闲 CPU < 1%（含 1s 采样与 LHM 轮询）、内存 < 30MB |
-| hyte-shell | 无动画时 CPU ≈ 0%；WebView2 进程组内存 ≤ 250MB |
+| auxdeck-daemon | 空闲 CPU < 1%（含 1s 采样与 LHM 轮询）、内存 < 30MB |
+| auxdeck-shell | 无动画时 CPU ≈ 0%；WebView2 进程组内存 ≤ 250MB |
 | 背景动画 | 非游戏时 GPU < 5%；游戏时按 §9.4 降级 |
 
 预期对齐：WebView2 自身 100–200MB 不可避免。本项目赢在空闲 CPU、采集开销与进程数量，不承诺把渲染层内存降到个位数。动工前先实测 Nexus 基线，记入 §12。
@@ -43,17 +43,17 @@
 ## 3. 架构（三层分离 + 进程模型）
 
 ```
-hyte-daemon        Rust 常驻服务，无 UI
+auxdeck-daemon        Rust 常驻服务，无 UI
   ├─ collectors/   sysinfo · nvml · lhm · weather · calendar · ai-usage · app-usage
   ├─ state/        聚合、采样节流、历史环形缓冲
   ├─ alarm/        闹钟触发与播声（shell 崩了也要响，§7.3）
   └─ rpc/          127.0.0.1 上的 WebSocket 推送 + JSON-RPC
 
-hyte-shell         渲染层，无边框常驻窗口 @ 副屏
+auxdeck-shell         渲染层，无边框常驻窗口 @ 副屏
   ├─ 4 列 × n 行网格 + 多页（§8.1），widget 按格子占位
   └─ 订阅 daemon 推送，自身不做任何采集
 
-hyte-hostage       外部窗口托管
+auxdeck-hostage       外部窗口托管
   ├─ 拖放停靠：全局监听窗口拖动 → 网格吸附 → 全屏压回停靠区（§6.2）
   └─ `--app=` / kiosk 拉起、z-order 巡逻与焦点管理
 ```
@@ -62,7 +62,7 @@ hyte-hostage       外部窗口托管
 
 **进程模型：**
 
-- 开机自启只注册一条：任务计划（登录触发、普通权限、失败自动重启）启动 hyte-daemon
+- 开机自启只注册一条：任务计划（登录触发、普通权限、失败自动重启）启动 auxdeck-daemon
 - daemon 兼任 supervisor：启动并守护 shell 与 hostage，崩溃后指数退避重启
 - daemon 失联时 shell 显示「重连中」降级 UI 并持续重连，shell 不自杀；失联超 30s 反向拉起 daemon（互为看门狗，named mutex + 退避防拉起风暴）
 - 各进程 named mutex 单实例
@@ -75,7 +75,7 @@ hyte-hostage       外部窗口托管
 
 **已选定：**
 
-- Rust workspace：`hyte-core`（共享类型）+ `hyte-daemon` + `hyte-hostage`；`hyte-shell` 为 Tauri v2 项目，其 src-tauri crate 加入同一 workspace
+- Rust workspace：`auxdeck-core`（共享类型）+ `auxdeck-daemon` + `auxdeck-hostage`；`auxdeck-shell` 为 Tauri v2 项目，其 src-tauri crate 加入同一 workspace
 - shell 层用 **Tauri v2 + React**，理由：WebView2 系统自带、产物 3–6MB、682px 竖屏网格 UI 用 CSS 迭代最快、网页类小组件可直接内嵌
 - 系统数据：`sysinfo`（CPU/内存/磁盘/网络）+ `nvml-wrapper`（RTX 5090 温度/功耗/显存/利用率）
 - AMD CPU 温度：**不写 ring-0 驱动**。轮询 LibreHardwareMonitor 的 HTTP server `http://localhost:8085/data.json`
@@ -195,9 +195,9 @@ strip = true
 
 - 提交前必须通过 `cargo fmt --check`、`cargo clippy -- -D warnings`、`cargo test`
 - collector 一律实现统一 trait，可单独禁用；任一 collector 失败不得影响其余数据推送
-- 所有跨进程数据结构定义在 `hyte-core`，serde 序列化
+- 所有跨进程数据结构定义在 `auxdeck-core`，serde 序列化
 - 采样频率可配置，默认：系统指标 1s、天气 10min、日程 5min、AI 用量 5min、前台应用 5s
-- 配置文件用 TOML，放 `%APPDATA%\HyteDeck\config.toml`
+- 配置文件用 TOML，放 `%APPDATA%\auxdeck\config.toml`
 - 日志用 `tracing`，默认写文件不写 stdout（无控制台常驻进程）
 - 第三方网页一律装入独立 webview/iframe，不注入任何 Tauri IPC；只有本地 UI bundle 拥有 IPC capability
 
@@ -234,7 +234,7 @@ M1 验收标准：
 
 依据 2026-08-10 副屏截图（第 1 页，共 2 页）：
 
-| Nexus 现有元素 | 说明 | HyteDeck 对应 |
+| Nexus 现有元素 | 说明 | auxdeck 对应 |
 |---|---|---|
 | 时钟卡 | 时间 + 中文日期 | M1 |
 | 应用使用时长卡 | 「Firefox 今天已使用 42 分 37 秒，相比昨日提升超过两倍」 | §7.4，M2 |
@@ -249,7 +249,7 @@ M1 验收标准：
 
 **资源基线（动工前实测填入）：**
 
-| 指标 | Nexus 实测（2026-08-10） | HyteDeck 目标 |
+| 指标 | Nexus 实测（2026-08-10） | auxdeck 目标 |
 |---|---|---|
 | 进程数 | 7（含 HYTE.Nexus.Service） | 3（+WebView2 子进程） |
 | 总内存 | 366.8 MB | daemon <30MB + shell ≤250MB |

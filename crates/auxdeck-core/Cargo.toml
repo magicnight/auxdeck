@@ -1,5 +1,5 @@
 [package]
-name = "hyte-core"
+name = "auxdeck-core"
 version.workspace = true
 edition.workspace = true
 

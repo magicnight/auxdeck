@@ -1,10 +1,10 @@
 [package]
-name = "hyte-daemon"
+name = "auxdeck-daemon"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-hyte-core = { path = "../hyte-core" }
+auxdeck-core = { path = "../auxdeck-core" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "time", "process"] }
 tokio-tungstenite = "0.30"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }

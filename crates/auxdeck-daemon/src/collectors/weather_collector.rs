@@ -7,7 +7,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
-use hyte_core::{Push, WeatherSnapshot};
+use auxdeck_core::{Push, WeatherSnapshot};
 use serde::Deserialize;
 use tokio::sync::watch;
 use tracing::{info, warn};

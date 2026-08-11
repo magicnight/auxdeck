@@ -15,7 +15,7 @@ export interface SystemSocketState {
   weather: WeatherSnapshot | null;
   /** 最近一次收到的应用使用时长快照；从未推送过时为 null。 */
   appUsage: AppUsageSnapshot | null;
-  /** 渲染配置；Config 推送到达前使用与 hyte_core::ShellConfig::default() 同形的内置默认值。 */
+  /** 渲染配置；Config 推送到达前使用与 auxdeck_core::ShellConfig::default() 同形的内置默认值。 */
   config: ShellConfig;
   /** 已连接且系统数据新鲜（ts_ms 距今 < 5s）。false 时 UI 应显示重连中降级态。 */
   live: boolean;

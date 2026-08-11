@@ -1,15 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/hyte-core",
-    "crates/hyte-daemon",
-    "crates/hyte-hostage",
+    "crates/auxdeck-core",
+    "crates/auxdeck-daemon",
+    "crates/auxdeck-hostage",
     "shell/src-tauri",
 ]
 
 [workspace.package]
 version = "0.0.1"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/magicnight/auxdeck"
 
 # 见 CLAUDE.md §4
 [profile.release]

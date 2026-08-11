@@ -1,10 +1,10 @@
-//! WebSocket RPC 服务：监听 `hyte_core::RPC_ADDR`，支持多客户端；连接建立
+//! WebSocket RPC 服务：监听 `auxdeck_core::RPC_ADDR`，支持多客户端；连接建立
 //! 时立即按序推 Config/System/Weather/AppUsage 的最新快照（有则推），此后
 //! 每次有新数据到达时广播给所有客户端（CLAUDE.md 任务书 4）。所有状态缓存
 //! 与扇出都在 `hub::Hub` 里，这里只负责 WS 协议本身。
 
+use auxdeck_core::{Push, RPC_ADDR};
 use futures_util::{SinkExt, StreamExt};
-use hyte_core::{Push, RPC_ADDR};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast;
 use tokio_tungstenite::tungstenite::Message;

@@ -1,11 +1,11 @@
-//! 单实例保护：全局命名 mutex `Global\HyteDeckDaemon`（CLAUDE.md 任务书 4）。
+//! 单实例保护：全局命名 mutex `Global\auxdeck-daemon`（CLAUDE.md §3）。
 //! 已存在时调用方应记录日志并正常退出（不是 panic）。
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, HANDLE};
 use windows::Win32::System::Threading::CreateMutexW;
 
-const MUTEX_NAME: &str = "Global\\HyteDeckDaemon";
+const MUTEX_NAME: &str = "Global\\auxdeck-daemon";
 
 /// 单实例检测结果。
 pub enum SingleInstance {

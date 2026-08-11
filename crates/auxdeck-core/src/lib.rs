@@ -1,4 +1,4 @@
-//! HyteDeck 跨进程共享类型。daemon ↔ shell ↔ hostage 的所有数据结构定义在这里（CLAUDE.md §10）。
+//! auxdeck 跨进程共享类型。daemon ↔ shell ↔ hostage 的所有数据结构定义在这里（CLAUDE.md §10）。
 //! daemon 是 config.toml 的唯一 owner；shell 不读文件，布局与数据全部经 WebSocket 推送获得。
 
 use serde::{Deserialize, Serialize};

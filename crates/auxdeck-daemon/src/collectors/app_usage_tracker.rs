@@ -6,8 +6,8 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
+use auxdeck_core::{AppUsageEntry, AppUsageSnapshot};
 use chrono::NaiveDate;
-use hyte_core::{AppUsageEntry, AppUsageSnapshot};
 
 const TOP_N: usize = 5;
 

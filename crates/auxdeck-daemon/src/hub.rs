@@ -6,7 +6,7 @@
 
 use std::sync::{Arc, RwLock};
 
-use hyte_core::{AppUsageSnapshot, Push, ShellConfig, SystemSnapshot, WeatherSnapshot};
+use auxdeck_core::{AppUsageSnapshot, Push, ShellConfig, SystemSnapshot, WeatherSnapshot};
 use tokio::sync::broadcast;
 
 /// 广播通道容量：客户端短暂落后时的缓冲深度，超出后旧消息被丢弃

@@ -1,5 +1,5 @@
 //! config.toml：daemon 是唯一 owner（CLAUDE.md §10，shell 不读文件）。路径
-//! `%APPDATA%\HyteDeck\config.toml`；不存在则写出带注释的默认文件。运行期用
+//! `%APPDATA%\auxdeck\config.toml`；不存在则写出带注释的默认文件。运行期用
 //! `notify` 监听所在目录，防抖 ~500ms 后重新解析；解析失败保留旧配置并
 //! `warn`，绝不崩（CLAUDE.md 任务书 1）。
 //!
@@ -10,7 +10,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use hyte_core::{GridConfig, Push, ShellConfig, WidgetPlacement};
+use auxdeck_core::{GridConfig, Push, ShellConfig, WidgetPlacement};
 use notify::{RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use tokio::sync::watch;
@@ -60,15 +60,15 @@ pub enum WeatherProviderKind {
     QWeather,
 }
 
-fn hytedeck_dir() -> PathBuf {
+fn auxdeck_dir() -> PathBuf {
     std::env::var_os("APPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
-        .join("HyteDeck")
+        .join("auxdeck")
 }
 
 pub fn config_path() -> PathBuf {
-    hytedeck_dir().join("config.toml")
+    auxdeck_dir().join("config.toml")
 }
 
 // ---- TOML 原始结构：每个字段都有默认值，允许用户只写部分字段 ----
@@ -237,7 +237,7 @@ impl RawConfig {
 }
 
 /// 生成带注释的默认 `config.toml` 文本。数值全部取自各 `Default` 实现（含
-/// `hyte_core::ShellConfig::default()` 的四张默认 widget），避免注释文本与
+/// `auxdeck_core::ShellConfig::default()` 的四张默认 widget），避免注释文本与
 /// 实际默认值日后漂移不一致。
 fn default_toml_text() -> String {
     let sampling = RawSampling::default();
@@ -245,7 +245,7 @@ fn default_toml_text() -> String {
     let grid = RawGrid::default();
 
     let mut out = format!(
-        "# HyteDeck daemon 配置文件。daemon 启动时监听本文件变更并热重载，\n\
+        "# auxdeck daemon 配置文件。daemon 启动时监听本文件变更并热重载，\n\
          # 大部分改动几秒内生效，无需重启进程。\n\
          # 语法错误时 daemon 会保留上一份可用配置并在日志中记录警告。\n\
          \n\
@@ -496,7 +496,7 @@ mod tests {
         assert!(!cfg.weather.enabled);
         assert_eq!(cfg.weather.provider, WeatherProviderKind::OpenMeteo);
         assert_eq!(cfg.weather.coords(), None);
-        // 空 widgets 数组回退到 hyte_core 的默认四张卡，而不是空白面板。
+        // 空 widgets 数组回退到 auxdeck_core 的默认四张卡，而不是空白面板。
         assert_eq!(cfg.shell.widgets, ShellConfig::default().widgets);
     }
 

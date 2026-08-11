@@ -94,6 +94,54 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
+name = "auxdeck-core"
+version = "0.0.1"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "auxdeck-daemon"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "auxdeck-core",
+ "chrono",
+ "futures-util",
+ "notify",
+ "nvml-wrapper",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "tokio-tungstenite",
+ "toml 0.8.2",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "windows 0.62.2",
+]
+
+[[package]]
+name = "auxdeck-hostage"
+version = "0.0.1"
+dependencies = [
+ "auxdeck-core",
+]
+
+[[package]]
+name = "auxdeck-shell"
+version = "0.0.1"
+dependencies = [
+ "auxdeck-core",
+ "tauri",
+ "tauri-build",
+ "windows 0.61.3",
+]
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1497,54 +1545,6 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "hyte-core"
-version = "0.0.1"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "hyte-daemon"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "chrono",
- "futures-util",
- "hyte-core",
- "notify",
- "nvml-wrapper",
- "reqwest",
- "serde",
- "serde_json",
- "sysinfo",
- "tokio",
- "tokio-tungstenite",
- "toml 0.8.2",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "windows 0.62.2",
-]
-
-[[package]]
-name = "hyte-hostage"
-version = "0.0.1"
-dependencies = [
- "hyte-core",
-]
-
-[[package]]
-name = "hyte-shell"
-version = "0.0.1"
-dependencies = [
- "hyte-core",
- "tauri",
- "tauri-build",
- "windows 0.61.3",
 ]
 
 [[package]]
