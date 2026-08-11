@@ -3,7 +3,7 @@
 //! 依次查找 Text 命中的第一个节点，解析 Value 前缀浮点数。连接失败或解析
 //! 失败时 `cpu_temp` 为 `None`；仅在可用性状态变化时打日志，避免刷屏。
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use serde::Deserialize;
@@ -49,20 +49,21 @@ fn extract_cpu_temp(root: &LhmNode) -> Option<f32> {
         .find_map(|name| find_by_text(root, name).and_then(|node| parse_leading_f32(&node.value)))
 }
 
+/// LHM 不可用时的降频探测间隔：每秒对不存在的端口重试毫无意义还抬高开销；
+/// 代价是 LHM 启动后最长 30s 才恢复温度显示（验收只要求 N/A 不断流）。
+const PROBE_BACKOFF: Duration = Duration::from_secs(30);
+
 pub struct LhmCollector {
-    client: reqwest::Client,
     availability: AvailabilityState,
+    /// 处于不可用状态时，早于该时刻的采样直接跳过请求。
+    next_probe_at: Option<Instant>,
 }
 
 impl LhmCollector {
     pub fn new() -> Self {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_millis(800))
-            .build()
-            .unwrap_or_else(|_| reqwest::Client::new());
         Self {
-            client,
             availability: AvailabilityState::new(),
+            next_probe_at: None,
         }
     }
 }
@@ -80,10 +81,15 @@ impl Collector for LhmCollector {
     }
 
     async fn collect(&mut self) -> PartialMetrics {
+        if let Some(at) = self.next_probe_at {
+            if Instant::now() < at {
+                return PartialMetrics::default();
+            }
+        }
         let result: Result<LhmNode, reqwest::Error> = async {
-            let root = self
-                .client
+            let root = super::http_client()
                 .get(LHM_URL)
+                .timeout(Duration::from_millis(800))
                 .send()
                 .await?
                 .error_for_status()?
@@ -99,10 +105,12 @@ impl Collector for LhmCollector {
                 if self.availability.note(false).is_some() {
                     warn!("LHM unavailable: {err}");
                 }
+                self.next_probe_at = Some(Instant::now() + PROBE_BACKOFF);
                 return PartialMetrics::default();
             }
         };
 
+        self.next_probe_at = None;
         let temp = extract_cpu_temp(&root);
         match self.availability.note(temp.is_some()) {
             Some(true) => info!("LHM CPU temperature available"),

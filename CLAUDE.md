@@ -261,3 +261,4 @@ M1 验收标准：
 | Q5 | 像素宠物动画要不要 parity | M4 动画引擎预留前景精灵层，做否届时定 |
 | Q6 | 天气显示哪个城市 | M2 配置时提供；不做 IP 定位 |
 | Q7 | 选片交互「主屏推 URL + 剪贴板监听」是否接受 | 按 §6.1 实现，剪贴板识别纯本地 |
+| Q8 | daemon 内存目标口径：release 实测 WorkingSet 42.6MB（其中 nvml.dll 映射即占 22MB，GPU 采集固定成本）/ Private 30.8MB | 暂按 Private ≤ 32MB 执行；§1 的 30MB 是否改为 Private 口径或 WS ≤ 45MB 待定夺 |

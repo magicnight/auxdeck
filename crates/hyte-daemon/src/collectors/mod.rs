@@ -56,6 +56,13 @@ pub trait Collector: Send {
     async fn collect(&mut self) -> PartialMetrics;
 }
 
+/// 全进程共享的 HTTP 客户端：连接池与 TLS 上下文只保留一份（CLAUDE.md §1
+/// daemon 内存目标）。超时由各调用方 per-request 指定，不在这里设默认值。
+pub(crate) fn http_client() -> &'static reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(reqwest::Client::new)
+}
+
 /// 跟踪某个 collector 内部资源（NVML 句柄、LHM HTTP 连接等）的可用性，
 /// 仅在状态发生变化时返回 Some，供调用方决定是否打日志 —— 避免采样循环
 /// 每秒刷屏（CLAUDE.md 任务书对 nvml / lhm collector 的共同要求）。

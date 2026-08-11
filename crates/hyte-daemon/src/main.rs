@@ -44,7 +44,9 @@ async fn sample_once(collectors: &mut [Box<dyn Collector>]) -> SystemSnapshot {
     }
 }
 
-#[tokio::main]
+// worker 线程压到 2：默认按 CPU 核数（本机 32）起线程，白白抬高常驻内存；
+// daemon 负载只有 1s 采样与回环 WS，2 个 worker 足够（CLAUDE.md §1 <30MB 目标）。
+#[tokio::main(worker_threads = 2)]
 async fn main() {
     let console = std::env::args().any(|a| a == "--console");
     let _log_guard = logging::init(console);

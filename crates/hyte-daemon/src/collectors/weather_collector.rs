@@ -16,6 +16,9 @@ use super::AvailabilityState;
 use crate::config::{AppConfig, WeatherConfig, WeatherProviderKind};
 use crate::hub::Hub;
 
+/// 每次天气请求的超时（共享 http_client 无默认超时，须 per-request 指定）。
+const WEATHER_TIMEOUT: Duration = Duration::from_secs(10);
+
 const OPEN_METEO_URL: &str = "https://api.open-meteo.com/v1/forecast";
 const QWEATHER_NOW_URL: &str = "https://devapi.qweather.com/v7/weather/now";
 const QWEATHER_3D_URL: &str = "https://devapi.qweather.com/v7/weather/3d";
@@ -69,10 +72,8 @@ fn build_provider(cfg: &WeatherConfig, lat: f64, lon: f64) -> Option<Box<dyn Wea
 /// enabled/provider/坐标 全部实时读取 `cfg_rx`，因此天气开关、坐标、
 /// provider 切换都无需重启进程。
 pub async fn run(mut cfg_rx: watch::Receiver<AppConfig>, hub: Hub) {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(10))
-        .build()
-        .unwrap_or_else(|_| reqwest::Client::new());
+    // 共享全进程 HTTP 客户端（连接池/TLS 只留一份），超时在各 fetch 内 per-request 指定。
+    let client = super::http_client().clone();
     let mut availability = AvailabilityState::new();
     let mut idle_reason: Option<&'static str> = None;
 
@@ -187,6 +188,7 @@ impl WeatherProvider for OpenMeteoProvider {
                 ),
                 ("timezone", "auto".to_string()),
             ])
+            .timeout(WEATHER_TIMEOUT)
             .send()
             .await?
             .error_for_status()?
@@ -302,6 +304,7 @@ impl WeatherProvider for QWeatherProvider {
         let now_resp: QWeatherNowResponse = client
             .get(QWEATHER_NOW_URL)
             .query(&[("location", location.as_str()), ("key", self.key.as_str())])
+            .timeout(WEATHER_TIMEOUT)
             .send()
             .await?
             .error_for_status()?
@@ -320,6 +323,7 @@ impl WeatherProvider for QWeatherProvider {
         let daily_resp: QWeatherDailyResponse = client
             .get(QWEATHER_3D_URL)
             .query(&[("location", location.as_str()), ("key", self.key.as_str())])
+            .timeout(WEATHER_TIMEOUT)
             .send()
             .await?
             .error_for_status()?
