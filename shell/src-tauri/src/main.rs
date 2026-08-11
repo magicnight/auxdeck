@@ -13,8 +13,8 @@ use std::time::Duration;
 use tauri::{App, Manager, PhysicalSize, Size, WebviewWindow};
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Dwm::{
-    DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_BORDER_COLOR,
-    DWMWA_EXTENDED_FRAME_BOUNDS, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
+    DwmGetWindowAttribute, DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_EXTENDED_FRAME_BOUNDS,
+    DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, GetWindowRect, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, GWL_STYLE,
@@ -75,7 +75,10 @@ fn strip_window_frame(hwnd: HWND) {
             0,
             0,
             SET_WINDOW_POS_FLAGS(
-                SWP_NOMOVE.0 | SWP_NOSIZE.0 | SWP_NOZORDER.0 | SWP_NOACTIVATE.0
+                SWP_NOMOVE.0
+                    | SWP_NOSIZE.0
+                    | SWP_NOZORDER.0
+                    | SWP_NOACTIVATE.0
                     | SWP_FRAMECHANGED.0,
             ),
         );
