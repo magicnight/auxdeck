@@ -83,6 +83,7 @@ hyte-hostage       外部窗口托管
   - LHM 不可用 → CPU 温度显示 N/A，其余 collector 不受影响
   - 接受的代价：LHM 常驻约 50–150MB、需管理员权限——这是「不写驱动」的交换条件
   - **无 Rust 等价库**（已核实勿再找）：Windows 用户态读不到 AMD CPU 温度，必须 ring-0 访问 MSR/SMN 寄存器——任何语言的方案都得带内核驱动，LHM 的价值正是它自带的签名驱动；WMI 的 `MSAcpi_ThermalZoneTemperature` 是主板 ACPI 温区、非 CPU die 温度且多数主板不更新，不采用
+  - **最小化克制利用口径（2026-08-11 拍板）**：①数据面——LHM 只作为 CPU 温度单一值的来源，其余传感器一律不从 LHM 走（GPU 走 NVML、系统指标走 sysinfo）；②LHM 配置面——只启用 CPU 硬件类别监控（GPU/存储/网络/主板全部取消勾选），Web server 仅本机 8085，最小化到托盘（步骤见 README）；③代码面——不可用时 30s 退避探测、全进程单 HTTP client、可用性状态变化才记日志、失败完全隔离
 - RPC：WebSocket 仅绑 127.0.0.1，v1 不加 token；RPC 永不暴露「执行任意命令 / 打开任意文件」类接口；后续引入敏感控制（LED、hostage 指令）时再补 token
 
 **已评估并排除（不要再提议）：**
