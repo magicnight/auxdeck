@@ -19,10 +19,11 @@ shell/                Tauri v2 + React 渲染层（网格布局 + 多页）
 
 ## 运行
 
-**日常直跑（推荐）**——release 构建后一条命令，daemon 自动拉起并守护同目录的 shell：
+**日常直跑（推荐）**——构建后一条命令，daemon 自动拉起并守护同目录的 shell：
 
 ```
-cargo build --release
+cargo build --release -p hyte-daemon
+cd shell; npm run tauri build; cd ..
 target\release\hyte-daemon.exe --console
 ```
 
@@ -33,8 +34,10 @@ cargo run -p hyte-daemon -- --console   # 终端 1
 cd shell; npm run tauri dev             # 终端 2
 ```
 
-注意：`cargo run -p hyte-shell`（debug 构建）会去连 vite dev server（devUrl），单独跑会显示
-「localhost 拒绝连接」——debug 构建必须经 `npm run tauri dev` 启动；直跑请用 release。
+注意（重要）：**shell 必须经 tauri CLI 构建**。Tauri v2 判定 production 的依据是
+`custom-protocol` feature（`tauri build` 自动启用）而非 build profile——纯
+`cargo build --release -p hyte-shell` 或 `cargo run -p hyte-shell` 产出的都是
+dev 形态、启动即连 vite devUrl，没有 dev server 时显示「localhost 拒绝连接」。
 
 daemon 默认日志写 `%APPDATA%\HyteDeck\logs\`；配置文件在 `%APPDATA%\HyteDeck\config.toml`（首次运行自动生成，修改后热重载、无需重启）。
 

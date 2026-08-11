@@ -5,8 +5,14 @@ edition.workspace = true
 
 [dependencies]
 hyte-core = { path = "../../crates/hyte-core" }
-tauri = "2"
+tauri = { version = "2", features = [] }
 windows = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }
 
 [build-dependencies]
-tauri-build = "2"
+tauri-build = { version = "2", features = [] }
+
+[features]
+# tauri CLI 在 `tauri build` 时启用。Tauri 用它判定 production：启用后
+# generate_context 才嵌入 frontendDist；缺省（含纯 cargo build --release）
+# 一律按 dev 处理去连 devUrl（tauri-macros context.rs: dev = cfg!(not(feature)))。
+custom-protocol = ["tauri/custom-protocol"]
